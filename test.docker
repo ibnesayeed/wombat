@@ -1,0 +1,24 @@
+#!/usr/bin/env -S docker image build . -f
+
+FROM    node:14
+
+ENV     DISPLAY=:99
+WORKDIR /app
+
+RUN     apt update && apt install -y \
+          xvfb \
+        && rm -rf /var/lib/apt/lists/*
+
+RUN     wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+        && apt update && apt install -y \
+          ./google-chrome-stable_current_amd64.deb \
+        && rm -rf *.deb /var/lib/apt/lists/*
+
+COPY    package.json yarn.lock ./
+RUN     yarn install
+
+COPY    . ./
+RUN     yarn run lint
+RUN     yarn run build-full-test
+
+RUN     Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 & yarn test
